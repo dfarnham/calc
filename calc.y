@@ -51,29 +51,29 @@ eval:
                                       }
                                     }
         | eval LETTER '=' expr '\n' { regs[(long)$2] = $4; }
-        | eval error '\n'           { yyerrok; yyclearin; }
+        | eval error '\n'           { yyerrok; yyclearin;  }
         ;
-expr:     NUMBER                    { $$ = $1;                 }
-        | LETTER                    { $$ = regs[(long)$1];      }
-        | '-' expr %prec UNARYMINUS { $$ = -$2;                }
-        | '+' expr %prec UNARYPLUS  { $$ = $2;                 }
-        | expr '!'                  { $$ = fact((long)$1);      }
-        | expr POW expr             { $$ = pow($1, $3);        }
-        | '~' expr                  { $$ = ~(long)$2;           }
-        | expr '*' expr             { $$ = $1 * $3;            }
-        | expr '/' expr             { $$ = $1 / $3;            }
+expr:     NUMBER                    { $$ = $1;                   }
+        | LETTER                    { $$ = regs[(long)$1];       }
+        | '-' expr %prec UNARYMINUS { $$ = -$2;                  }
+        | '+' expr %prec UNARYPLUS  { $$ = $2;                   }
+        | expr '!'                  { $$ = fact((long)$1);       }
+        | expr POW expr             { $$ = pow($1, $3);          }
+        | '~' expr                  { $$ = ~(long)$2;            }
+        | expr '*' expr             { $$ = $1 * $3;              }
+        | expr '/' expr             { $$ = $1 / $3;              }
         | expr '%' expr             { $$ = (long)$1 % (long)$3;  }
-        | expr '+' expr             { $$ = $1 + $3;            }
-        | expr '-' expr             { $$ = $1 - $3;            }
+        | expr '+' expr             { $$ = $1 + $3;              }
+        | expr '-' expr             { $$ = $1 - $3;              }
         | expr LSHIFT expr          { $$ = (long)$1 << (long)$3; }
         | expr RSHIFT expr          { $$ = (long)$1 >> (long)$3; }
         | expr '&' expr             { $$ = (long)$1 & (long)$3;  }
         | expr '^' expr             { $$ = (long)$1 ^ (long)$3;  }
         | expr '|' expr             { $$ = (long)$1 | (long)$3;  }
-        | '(' expr ')'              { $$ = $2;                 }
-        | '[' expr ']'              { $$ = $2;                 }
-        | trig_expr                 { $$ = $1;                 }
-        | other_math_expr           { $$ = $1;                 }
+        | '(' expr ')'              { $$ = $2;                   }
+        | '[' expr ']'              { $$ = $2;                   }
+        | trig_expr                 { $$ = $1;                   }
+        | other_math_expr           { $$ = $1;                   }
         ;
 
 trig_expr:  SINE     '(' expr ')' { $$ = sin($3 * rad_deg);  }
