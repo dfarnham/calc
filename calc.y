@@ -5,6 +5,7 @@
      */
 
 #include <stdio.h>
+#include <unistd.h>
 #include <math.h>
 #include <string.h>
 #define YYSTYPE double // data type of yacc stack
@@ -118,7 +119,9 @@ yyerror(char *s) {
 int
 main(int argc, char *argv[]) {
     progname = argv[0];
-    printf("calc: 11/94 (Dave Farnham)\nQuit with ^D,quit,stop,end\n");
+    if (isatty(0)) {
+        printf("calc: 11/94 (Dave Farnham)\nQuit with ^D,quit,stop,end\n");
+    }
     yyparse();
     exit(0);
 }
