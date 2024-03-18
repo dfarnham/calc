@@ -11,9 +11,9 @@
 #define YYSTYPE double // data type of yacc stack
 
 #define LAST_EVAL 26
-double rad_deg = 1.0;  // Either 1.0 or pi/180 for radians or degrees
-int precision = 12;    // Digits of decimal precision
-double regs[27];       // Variables a-z with '_' holding the last evaluated value
+YYSTYPE rad_deg = 1;  // Either 1.0 or pi/180 for radians or degrees
+int precision = 16;   // Digits of decimal precision
+YYSTYPE reg[27];      // Registers/variables a-z with '_' holding the last evaluated value
 
 extern void yyerror(char *);
 extern int yylex();
@@ -21,9 +21,10 @@ extern int yylex();
 long fact(long);
 
 %}
-%token NUMBER LSHIFT RSHIFT LETTER
+%token NUMBER LSHIFT RSHIFT VARIABLE
 %token SINE COSINE TANGENT ASINE ACOSINE ATANGENT SQRT ABS POW
 %token EXP LOG LOG2 LOG10
+%token BIN
 %left '|'           // bitwise OR
 %left '^'           // bitwise XOR
 %left '&'           // bitwise AND
@@ -36,26 +37,44 @@ long fact(long);
 %left UNARYMINUS UNARYPLUS
 %%
 eval:
-        | eval '\n'                 { ; }
-        | eval expr '\n'            { regs[LAST_EVAL] = $2;
-                                      if ((double)((long)$2) == $2) {
-                                          printf("%ld\n", (long)$2);
-                                      } else {
-                                          char buf[BUFSIZ];
-                                          snprintf(buf, BUFSIZ, "%.*lf", precision, $2);
-                                          // trim trailing zeros
-                                          int i = strlen(buf) - 1;
-                                          while (i > 0 && buf[i] == '0') {
-                                              buf[i--] = '\0';
-                                          }
-                                          printf("%s\n", buf);
-                                      }
-                                    }
-        | eval LETTER '=' expr '\n' { regs[(long)$2] = $4; }
-        | eval error '\n'           { yyerrok; yyclearin;  }
+        | eval '\n'      { ; }
+        | eval BIN '\n' { // display the last result in base-2 
+                          unsigned int n = (unsigned int)reg[LAST_EVAL];
+                          int found_first_non_zero = 0;
+                          for (int i = 31; i >= 0; i--) {
+                              int bit = n >> i & 1;
+                              if (!found_first_non_zero && bit) {
+                                  found_first_non_zero = 1;
+                              }
+                              if (found_first_non_zero) {
+                                  putchar('0' + bit);
+                              }
+                          }
+                          if (!found_first_non_zero) {
+                              putchar('0');
+                          }
+                          putchar('\n');
+                        }
+        | eval expr '\n' { reg[LAST_EVAL] = $2; // variable '_' holds the last evaluation
+                           if ((YYSTYPE)((long)$2) == $2) {
+                               printf("%ld\n", (long)$2);
+                           } else {
+                               char buf[BUFSIZ];
+                               snprintf(buf, BUFSIZ, "%.*lf", precision, $2);
+                               // trim trailing zeros
+                               int i = strlen(buf) - 1;
+                               while (i > 0 && buf[i] == '0') {
+                                   buf[i--] = '\0';
+                               }
+                               printf("%s\n", buf);
+                           }
+                         }
+        | eval VARIABLE '=' expr '\n' { reg[(int)$2] = $4;  }
+        | eval error '\n'             { yyerrok; yyclearin; }
         ;
+
 expr:     NUMBER                    { $$ = $1;                   }
-        | LETTER                    { $$ = regs[(long)$1];       }
+        | VARIABLE                  { $$ = reg[(int)$1];         }
         | '-' expr %prec UNARYMINUS { $$ = -$2;                  }
         | '+' expr %prec UNARYPLUS  { $$ = $2;                   }
         | expr '!'                  { $$ = fact((long)$1);       }
@@ -85,12 +104,12 @@ trig_expr:  SINE     '(' expr ')' { $$ = sin($3 * rad_deg);  }
           | ATANGENT '(' expr ')' { $$ = atan($3) / rad_deg; }
         ;
 
-other_math_expr:  SQRT  '(' expr ')' { $$ = sqrt($3); }
-          | ABS   '(' expr ')' { $$ = fabs($3);  }
-          | EXP   '(' expr ')' { $$ = exp($3);   }
-          | LOG   '(' expr ')' { $$ = log($3);   }
-          | LOG2  '(' expr ')' { $$ = log2($3);  }
-          | LOG10 '(' expr ')' { $$ = log10($3); }
+other_math_expr:  SQRT  '(' expr ')' { $$ = sqrt($3);  }
+                | ABS   '(' expr ')' { $$ = fabs($3);  }
+                | EXP   '(' expr ')' { $$ = exp($3);   }
+                | LOG   '(' expr ')' { $$ = log($3);   }
+                | LOG2  '(' expr ')' { $$ = log2($3);  }
+                | LOG10 '(' expr ')' { $$ = log10($3); }
         ;
 %%
         /* end of grammar */
@@ -103,11 +122,11 @@ long
 fact(long n) {
     if (n < 0) {
         yyerror("warning: NaN produced, returning 0");
-        return (0);
+        return 0;
     } else if (n < 1) {
-        return (1);
+        return 1;
     } else {
-        return (n * fact(n-1));
+        return n * fact(n-1);
     }
 }
 
@@ -118,9 +137,10 @@ yyerror(char *s) {
 
 int
 main(int argc, char *argv[]) {
+    srand48(arc4random());
     progname = argv[0];
     if (isatty(0)) {
-        printf("calc: 11/94 (Dave Farnham)\nQuit with ^D,quit,stop,end\n");
+        printf("calc: 11/94 (Dave Farnham)\nQuit with ^D,quit\n");
     }
     yyparse();
     exit(0);
