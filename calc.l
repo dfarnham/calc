@@ -51,7 +51,7 @@ D [0-9]
 \>\>            { return(RSHIFT);   }
 
 [a-z]           { yylval = yytext[0] - 'a'; return(VARIABLE); }
-\_              { yylval = 26.0; return(VARIABLE); }
+\_              { yylval = 26; return(VARIABLE); }
 
 (prec|PREC)[ ][0-9]+ { precision = strtol(yytext+5, (char **)NULL, 0); }
 (rad|RAD)            { rad_deg = 1.0; printf ("Radian mode:\n"); }
